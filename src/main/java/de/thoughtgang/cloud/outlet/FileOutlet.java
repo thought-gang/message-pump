@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
@@ -39,6 +40,7 @@ public class FileOutlet implements Outlet {
             throw new ConfigurationError(String.format("%s need a config parameter %s", this.getClass().getName(), INIT_OUTPUT_DIR));
         }
         this.outputDir = Paths.get(path);
+        outputDir.toFile().mkdirs();
     }
 
     @Override
@@ -49,13 +51,13 @@ public class FileOutlet implements Outlet {
         
         if (message instanceof TextMessage) {
         
-            try (FileWriter fileWriter = new FileWriter(file);) {
+            try (FileWriter fileWriter = new FileWriter(file)) {
                
                 fileWriter.write(((TextMessage)message).getPayload());
                 
             } catch (IOException ex) {
                 
-                throw new OutletException(String.format("%s could not write message into directory %s: %s", this.getClass().getSimpleName(), this.outputDir.normalize().toAbsolutePath().toString(), ex.getMessage()), ex); 
+                throw new OutletException(String.format("%s could not write message into directory %s: %s", this.getClass().getSimpleName(), this.outputDir.normalize().toAbsolutePath().toString(), ex.getMessage()), ex);
             
             }
             
@@ -67,7 +69,7 @@ public class FileOutlet implements Outlet {
             
             } catch (IOException ex) {
                 
-                throw new OutletException(String.format("%s could not write message into directory %s: %s", this.getClass().getSimpleName(), this.outputDir.normalize().toAbsolutePath().toString(), ex.getMessage()), ex); 
+                throw new OutletException(String.format("%s could not write message into directory %s: %s", this.getClass().getSimpleName(), this.outputDir.normalize().toAbsolutePath().toString(), ex.getMessage()), ex);
             
             }
             
@@ -83,7 +85,7 @@ public class FileOutlet implements Outlet {
         
     }
     
-    public String getFilename(Message message) {
+    private String getFilename(Message message) {
         
         String filename = UUID.randomUUID().toString();
         String extension = getExtension(message);
