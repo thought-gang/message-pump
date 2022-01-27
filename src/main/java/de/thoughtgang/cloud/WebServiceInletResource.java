@@ -35,5 +35,4 @@ public class WebServiceInletResource {
 
         return "hello";
     }
-
- }
+}

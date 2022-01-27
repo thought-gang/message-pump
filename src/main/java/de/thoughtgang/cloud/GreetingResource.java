@@ -10,7 +10,7 @@ import javax.ws.rs.core.MediaType;
 @Path("/hello")
 public class GreetingResource {
 
-    @POST
+    @GET
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
     public String hello() {
