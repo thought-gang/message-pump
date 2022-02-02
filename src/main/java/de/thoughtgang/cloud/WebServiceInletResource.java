@@ -1,8 +1,13 @@
 package de.thoughtgang.cloud;
 
+import de.thoughtgang.cloud.core.Dispatcher;
+import de.thoughtgang.cloud.message.TextMessage;
+import de.thoughtgang.cloud.util.ConfigurationError;
 import org.jboss.logging.Logger;
 
 import io.vertx.core.http.HttpServerRequest;
+
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -20,6 +25,9 @@ import java.util.stream.Collectors;
 @Path("/inlet")
 public class WebServiceInletResource {
 
+    @Inject
+    private Dispatcher dispatcher;
+
     private static final Logger LOG = Logger.getLogger(WebServiceInletResource.class);
 
     @POST
@@ -32,6 +40,13 @@ public class WebServiceInletResource {
         InputStreamReader reader = new InputStreamReader(inputStream);
         String body = new BufferedReader(reader).lines().collect(Collectors.joining("\n"));
         LOG.info(contentType + " ----" + body);
+        TextMessage message = new TextMessage(body);
+        message.getHeaders().put("Content-Type", contentType);
+        try {
+            dispatcher.dispatch(message);
+        } catch (ConfigurationError e) {
+            e.printStackTrace();
+        }
 
         return "hello";
     }
