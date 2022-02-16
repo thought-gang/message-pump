@@ -1,7 +1,10 @@
 package de.thoughtgang.cloud;
 
+import de.thoughtgang.cloud.base.Message;
 import de.thoughtgang.cloud.core.Dispatcher;
+import de.thoughtgang.cloud.message.ByteMessage;
 import de.thoughtgang.cloud.message.TextMessage;
+import de.thoughtgang.cloud.outlet.FileOutlet;
 import de.thoughtgang.cloud.util.ConfigurationError;
 import org.jboss.logging.Logger;
 
@@ -15,10 +18,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import javax.ws.rs.core.Response;
+import java.io.*;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -33,14 +35,22 @@ public class WebServiceInletResource {
     @POST
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.TEXT_PLAIN)
-    public String submit(@Context HttpServerRequest request, InputStream inputStream) {
+    public Response submit(@Context HttpServerRequest request, InputStream is) throws IOException {
 
         Object test = request.headers();
         String contentType = request.getHeader("Content-Type");
-        InputStreamReader reader = new InputStreamReader(inputStream);
-        String body = new BufferedReader(reader).lines().collect(Collectors.joining("\n"));
-        LOG.info(contentType + " ----" + body);
-        TextMessage message = new TextMessage(body);
+        Message message;
+
+        if (contentType != null && (contentType.startsWith("text/") || "application/xhtml+xml".equals(contentType) || "application/xml".equals(contentType))) {
+            InputStreamReader reader = new InputStreamReader(is);
+            String body = new BufferedReader(reader).lines().collect(Collectors.joining("\n"));
+            message = new TextMessage(body);
+            LOG.info(contentType + " ----" + body);
+        } else {
+            byte[] body = is.readAllBytes();
+            message = new ByteMessage(body);
+        }
+
         message.getHeaders().put("Content-Type", contentType);
         try {
             dispatcher.dispatch(message);
@@ -48,6 +58,14 @@ public class WebServiceInletResource {
             e.printStackTrace();
         }
 
-        return "hello";
+        Response.ResponseBuilder rb = Response.ok("hello");
+        for (Map.Entry<String, String> header : message.getHeaders().entrySet()) {
+
+            rb.header("X-MessagePump-" + header.getKey(), header.getValue());
+
+        }
+
+
+        return rb.build() ;
     }
 }

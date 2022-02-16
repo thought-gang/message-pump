@@ -13,6 +13,11 @@ public class ByteMessage extends AbstractMessage {
     
     private byte[] payload;
 
+    public ByteMessage(byte[] payload) {
+        super();
+        this.payload = payload;
+    }
+
     @Override
     public byte[] getPayload() {
         return payload;
